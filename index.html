@@ -1,1 +1,2467 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vaelora System</title>
+<style>
+/* ══════════════════════════════════════════════════════════
+   THEME TOKENS
+   ══════════════════════════════════════════════════════════ */
+:root{
+  --bg:#02030a;
+  --text:#e8f1ff;
+  --muted:#8ea3c4;
+  --panel:rgba(11,17,36,.62);
+  --panel-solid:rgba(11,17,36,.94);
+  --border:rgba(127,212,255,.18);
+  --border-strong:rgba(127,212,255,.34);
+  --accent:#7fd4ff;
+  --accent-2:#8b7dff;
+  --accent-ink:#04121e;
+  --shadow:0 22px 60px rgba(0,0,0,.6);
+  --input-bg:rgba(255,255,255,.055);
+  --input-bg-focus:rgba(255,255,255,.09);
+  --danger:#ff6b6b;
+  --ok:#4ade80;
+  --warn:#fbbf24;
+  --ease:cubic-bezier(.22,.8,.3,1);
+  --dossier-w:400px;
+}
+[data-theme="light"]{
+  --bg:#eef3fb;
+  --text:#0d1b33;
+  --muted:#5a7292;
+  --panel:rgba(255,255,255,.74);
+  --panel-solid:rgba(255,255,255,.96);
+  --border:rgba(37,99,235,.18);
+  --border-strong:rgba(37,99,235,.36);
+  --accent:#2563eb;
+  --accent-2:#7c3aed;
+  --accent-ink:#ffffff;
+  --shadow:0 22px 55px rgba(30,60,120,.16);
+  --input-bg:rgba(255,255,255,.75);
+  --input-bg-focus:#ffffff;
+  --danger:#dc2626;
+  --ok:#16a34a;
+  --warn:#d97706;
+}
 
+/* ══════════════════════════════════════════════════════════
+   BASE
+   ══════════════════════════════════════════════════════════ */
+*{box-sizing:border-box;}
+html,body{height:100%;margin:0;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:14px;
+  line-height:1.45;
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+  transition:background .5s var(--ease), color .5s var(--ease);
+}
+button,input,textarea{font:inherit;color:inherit;}
+button{cursor:pointer;border:none;background:none;}
+input,textarea{
+  width:100%;
+  background:var(--input-bg);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:9px 11px;
+  color:var(--text);
+  outline:none;
+  transition:border-color .2s var(--ease), background .2s var(--ease), box-shadow .2s var(--ease);
+}
+input:focus,textarea:focus{
+  border-color:var(--border-strong);
+  background:var(--input-bg-focus);
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+input::placeholder,textarea::placeholder{color:var(--muted);opacity:.7;}
+textarea{resize:vertical;min-height:76px;line-height:1.5;}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+::-webkit-scrollbar{width:9px;height:9px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:9px;}
+::-webkit-scrollbar-thumb:hover{background:var(--accent);}
+
+.glass{
+  background:var(--panel);
+  -webkit-backdrop-filter:blur(20px) saturate(150%);
+  backdrop-filter:blur(20px) saturate(150%);
+  border:1px solid var(--border);
+  box-shadow:var(--shadow);
+}
+.muted{color:var(--muted);}
+.small{font-size:12px;}
+.hidden{display:none !important;}
+
+/* ══════════════════════════════════════════════════════════
+   CANVAS
+   ══════════════════════════════════════════════════════════ */
+#space{
+  position:fixed;inset:0;
+  width:100%;height:100%;
+  display:block;
+  z-index:0;
+  touch-action:manipulation;
+}
+
+/* ══════════════════════════════════════════════════════════
+   ONLINE NOW PANEL
+   ══════════════════════════════════════════════════════════ */
+.online-panel{
+  position:fixed;
+  top:16px;left:16px;
+  width:262px;
+  border-radius:16px;
+  z-index:30;
+  overflow:hidden;
+  transition:width .3s var(--ease);
+}
+.online-head{
+  width:100%;
+  display:flex;align-items:center;gap:8px;
+  padding:11px 13px;
+  text-align:left;
+}
+.online-head .dot-live{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--ok);
+  box-shadow:0 0 0 0 color-mix(in srgb,var(--ok) 60%,transparent);
+  animation:pulse 2.2s infinite;
+  flex:none;
+}
+@keyframes pulse{
+  0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--ok) 55%,transparent);}
+  70%{box-shadow:0 0 0 8px transparent;}
+  100%{box-shadow:0 0 0 0 transparent;}
+}
+.online-title{font-weight:600;font-size:12.5px;letter-spacing:.4px;text-transform:uppercase;flex:1;}
+.online-count{
+  font-size:11px;font-weight:700;
+  background:color-mix(in srgb,var(--accent) 20%,transparent);
+  color:var(--accent);
+  border-radius:20px;
+  padding:2px 8px;
+}
+.chev{font-size:10px;color:var(--muted);transition:transform .3s var(--ease);}
+.online-panel.collapsed .chev{transform:rotate(-90deg);}
+.online-body{
+  max-height:340px;
+  overflow-y:auto;
+  padding:2px 8px 10px;
+  transition:max-height .35s var(--ease), opacity .3s var(--ease), padding .3s var(--ease);
+}
+.online-panel.collapsed .online-body{max-height:0;opacity:0;padding-top:0;padding-bottom:0;}
+.user-row{
+  width:100%;
+  display:flex;align-items:center;gap:9px;
+  padding:7px 8px;
+  border-radius:10px;
+  text-align:left;
+  transition:background .18s var(--ease), transform .18s var(--ease);
+}
+.user-row:hover{background:color-mix(in srgb,var(--accent) 12%,transparent);transform:translateX(2px);}
+.user-row.self{cursor:default;}
+.user-row.self:hover{transform:none;background:transparent;}
+.user-row + .user-row{margin-top:1px;}
+.avatar{
+  display:inline-flex;align-items:center;justify-content:center;
+  border-radius:50%;
+  border:1px solid;
+  font-size:10.5px;font-weight:700;letter-spacing:.3px;
+  flex:none;
+}
+.user-meta{flex:1;min-width:0;}
+.user-name{
+  font-size:12.5px;font-weight:600;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  display:flex;align-items:center;gap:6px;
+}
+.user-sub{font-size:10.5px;color:var(--muted);}
+.tag-you{
+  font-size:9px;font-weight:800;letter-spacing:.6px;
+  background:var(--accent);color:var(--accent-ink);
+  padding:1px 6px;border-radius:20px;text-transform:uppercase;
+}
+.status-dot{width:8px;height:8px;border-radius:50%;flex:none;}
+.status-dot.online{background:var(--ok);box-shadow:0 0 8px var(--ok);}
+.status-dot.away{background:var(--warn);box-shadow:0 0 8px var(--warn);}
+.online-section-label{
+  font-size:10px;text-transform:uppercase;letter-spacing:1px;
+  color:var(--muted);padding:9px 9px 5px;font-weight:700;
+}
+
+/* ══════════════════════════════════════════════════════════
+   HAMBURGER MENU
+   ══════════════════════════════════════════════════════════ */
+.menu-btn{
+  position:fixed;
+  top:16px;right:16px;
+  width:48px;height:48px;
+  border-radius:15px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:0;
+  z-index:80;
+  transition:opacity .32s var(--ease), transform .32s var(--ease), background .25s var(--ease), border-color .25s var(--ease);
+}
+.menu-btn:hover{border-color:var(--border-strong);}
+.menu-btn span{
+  display:block;width:20px;height:2px;border-radius:2px;
+  background:var(--text);
+  transition:transform .35s var(--ease), opacity .25s var(--ease);
+}
+.menu-btn span + span{margin-top:5px;}
+.menu-btn.open span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+.menu-btn.open span:nth-child(2){opacity:0;transform:scaleX(.2);}
+.menu-btn.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+
+body.dossier-open .menu-btn{
+  opacity:0 !important;
+  pointer-events:none !important;
+  transform:translateY(-16px) scale(.85) !important;
+}
+body.dossier-open .menu-panel{
+  opacity:0 !important;
+  pointer-events:none !important;
+  transform:translateY(-14px) scale(.96) !important;
+}
+
+.menu-panel{
+  position:fixed;
+  top:74px;right:16px;
+  width:312px;
+  max-height:calc(100vh - 96px);
+  overflow-y:auto;
+  border-radius:18px;
+  padding:16px;
+  z-index:75;
+  opacity:0;
+  pointer-events:none;
+  transform:translateY(-12px) scale(.97);
+  transition:opacity .3s var(--ease), transform .3s var(--ease);
+}
+.menu-panel.open{opacity:1;pointer-events:auto;transform:none;}
+.menu-brand{
+  display:flex;align-items:center;gap:9px;
+  padding-bottom:12px;
+  border-bottom:1px solid var(--border);
+  margin-bottom:13px;
+}
+.brand-mark{
+  width:26px;height:26px;border-radius:50%;
+  background:radial-gradient(circle at 35% 32%, #fff6d8, #ffb347 45%, #ff7a18 100%);
+  box-shadow:0 0 16px rgba(255,170,60,.6);
+  flex:none;
+}
+.menu-brand h1{
+  font-size:14px;margin:0;font-weight:700;letter-spacing:.4px;
+}
+.menu-brand p{margin:1px 0 0;font-size:10.5px;color:var(--muted);letter-spacing:.5px;}
+.menu-group{margin-bottom:14px;}
+.menu-label{
+  display:block;
+  font-size:10px;text-transform:uppercase;letter-spacing:1px;
+  color:var(--muted);font-weight:700;margin-bottom:7px;
+}
+.menu-row{display:flex;gap:8px;}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  border-radius:10px;
+  padding:9px 14px;
+  font-size:12.5px;font-weight:600;
+  border:1px solid var(--border);
+  background:var(--input-bg);
+  transition:background .2s var(--ease), border-color .2s var(--ease), transform .12s var(--ease), opacity .2s var(--ease);
+}
+.btn:hover{border-color:var(--border-strong);background:color-mix(in srgb,var(--accent) 10%,transparent);}
+.btn:active{transform:scale(.97);}
+.btn.primary{
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  color:var(--accent-ink);
+  border-color:transparent;
+  box-shadow:0 8px 22px color-mix(in srgb,var(--accent) 28%,transparent);
+}
+.btn.primary:hover{filter:brightness(1.08);}
+.btn.ghost{background:transparent;}
+.btn.block{width:100%;}
+.btn.sm{padding:6px 11px;font-size:11.5px;border-radius:8px;}
+.btn[disabled]{opacity:.45;pointer-events:none;}
+
+input[type=range]{
+  -webkit-appearance:none;appearance:none;
+  width:100%;height:5px;padding:0;border:none;border-radius:5px;
+  background:color-mix(in srgb,var(--accent) 22%,transparent);
+  box-shadow:none;
+}
+input[type=range]:focus{box-shadow:none;}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:16px;height:16px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  border:2px solid var(--bg);
+  box-shadow:0 0 10px color-mix(in srgb,var(--accent) 60%,transparent);
+  cursor:pointer;
+}
+input[type=range]::-moz-range-thumb{
+  width:16px;height:16px;border-radius:50%;border:2px solid var(--bg);
+  background:var(--accent);cursor:pointer;
+}
+.speed-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;}
+.speed-val{font-size:11.5px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;}
+
+.user-card{
+  display:flex;align-items:center;gap:10px;
+  padding:10px;
+  border-radius:13px;
+  background:var(--input-bg);
+  border:1px solid var(--border);
+}
+.user-card .user-meta{flex:1;}
+
+.toggle{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 10px;
+  border-radius:11px;
+  background:var(--input-bg);
+  border:1px solid var(--border);
+  cursor:pointer;
+  user-select:none;
+}
+.switch{
+  position:relative;
+  width:40px;height:22px;border-radius:22px;
+  background:color-mix(in srgb,var(--muted) 40%,transparent);
+  transition:background .25s var(--ease);
+  flex:none;
+}
+.switch::after{
+  content:"";position:absolute;top:3px;left:3px;
+  width:16px;height:16px;border-radius:50%;
+  background:#fff;
+  transition:transform .28s var(--ease);
+  box-shadow:0 2px 6px rgba(0,0,0,.35);
+}
+.switch.on{background:linear-gradient(135deg,var(--accent),var(--accent-2));}
+.switch.on::after{transform:translateX(18px);}
+
+/* ══════════════════════════════════════════════════════════
+   DOSSIER PANEL
+   ══════════════════════════════════════════════════════════ */
+.dossier{
+  position:fixed;
+  top:0;right:0;
+  width:var(--dossier-w);
+  height:100%;
+  z-index:60;
+  display:flex;flex-direction:column;
+  border-radius:0;
+  border-right:none;border-top:none;border-bottom:none;
+  transform:translateX(103%);
+  transition:transform .5s var(--ease);
+  will-change:transform;
+}
+.dossier.open{transform:translateX(0);}
+.dossier-head{
+  display:flex;align-items:flex-start;gap:11px;
+  padding:18px 18px 14px;
+  border-bottom:1px solid var(--border);
+  flex:none;
+}
+.dossier-dot{
+  width:13px;height:13px;border-radius:50%;
+  margin-top:5px;flex:none;
+  background:var(--accent);
+}
+.dossier-title-wrap{flex:1;min-width:0;}
+.dossier-head h2{
+  margin:0;font-size:17px;font-weight:700;letter-spacing:.3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.dossier-head p{
+  margin:2px 0 0;font-size:11.5px;color:var(--muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.icon-btn{
+  width:32px;height:32px;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;color:var(--muted);
+  border:1px solid transparent;
+  transition:background .2s var(--ease), color .2s var(--ease), border-color .2s var(--ease);
+  flex:none;
+}
+.icon-btn:hover{background:var(--input-bg);color:var(--text);border-color:var(--border);}
+.dossier-body{
+  flex:1;
+  overflow-y:auto;
+  padding:16px 18px 22px;
+}
+.field{display:block;margin-bottom:13px;}
+.field > span{
+  display:block;
+  font-size:10.5px;text-transform:uppercase;letter-spacing:.9px;
+  color:var(--muted);font-weight:700;margin-bottom:5px;
+}
+.section-title{
+  font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;
+  color:var(--accent);font-weight:800;
+  margin:20px 0 11px;
+  padding-bottom:6px;
+  border-bottom:1px solid var(--border);
+}
+.facts{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.facts .field{margin-bottom:0;}
+.preview{
+  margin:-4px 0 13px;
+  border-radius:12px;
+  overflow:hidden;
+  border:1px solid var(--border);
+  background:var(--input-bg);
+  display:none;
+}
+.preview.show{display:block;}
+.preview img{display:block;width:100%;height:auto;max-height:230px;object-fit:cover;}
+.preview iframe,.preview video{
+  display:block;width:100%;aspect-ratio:16/9;border:none;background:#000;
+}
+.preview p{margin:0;padding:14px;text-align:center;}
+
+/* ══════════════════════════════════════════════════════════
+   MOONS EDITOR
+   ══════════════════════════════════════════════════════════ */
+.moons-editor{
+  display:flex;flex-direction:column;gap:6px;
+}
+.moon-header{
+  display:grid;
+  grid-template-columns:36px 1fr 1fr 1fr 28px;
+  gap:6px;
+  font-size:9px;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:.8px;
+  font-weight:700;
+  padding:0 4px 2px;
+  text-align:center;
+}
+.moon-header span:first-child{text-align:left;padding-left:2px;}
+.moon-row{
+  display:grid;
+  grid-template-columns:36px 1fr 1fr 1fr 28px;
+  gap:6px;
+  align-items:center;
+  padding:6px;
+  border-radius:10px;
+  background:var(--input-bg);
+  border:1px solid var(--border);
+  animation:moonIn .3s var(--ease);
+}
+@keyframes moonIn{from{opacity:0;transform:translateX(-6px);}}
+.moon-row input[type=color]{
+  width:34px;height:30px;padding:0;border-radius:8px;
+  border:1px solid var(--border);cursor:pointer;
+  background:transparent;
+  -webkit-appearance:none;appearance:none;
+}
+.moon-row input[type=color]::-webkit-color-swatch-wrapper{padding:2px;}
+.moon-row input[type=color]::-webkit-color-swatch{border:none;border-radius:6px;}
+.moon-row input[type=number]{
+  padding:5px 4px;font-size:11.5px;text-align:center;
+  border-radius:7px;font-variant-numeric:tabular-nums;
+  -moz-appearance:textfield;
+}
+.moon-row input[type=number]::-webkit-outer-spin-button,
+.moon-row input[type=number]::-webkit-inner-spin-button{
+  -webkit-appearance:none;margin:0;
+}
+.moon-del{
+  width:26px;height:26px;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--muted);font-size:12px;
+  transition:background .18s, color .18s;
+}
+.moon-del:hover{background:color-mix(in srgb,var(--danger) 18%,transparent);color:var(--danger);}
+.moons-empty{
+  text-align:center;padding:10px 0;margin:0;
+  font-style:italic;
+}
+
+.dossier-foot{
+  flex:none;
+  display:flex;gap:9px;align-items:center;
+  padding:13px 18px;
+  border-top:1px solid var(--border);
+  background:color-mix(in srgb,var(--bg) 40%,transparent);
+}
+.dossier-foot .btn{flex:1;}
+.readonly-note{
+  flex:1;text-align:center;
+  font-size:11px;font-weight:700;letter-spacing:.8px;
+  text-transform:uppercase;color:var(--warn);
+  padding:9px;border-radius:10px;
+  border:1px dashed color-mix(in srgb,var(--warn) 45%,transparent);
+  background:color-mix(in srgb,var(--warn) 10%,transparent);
+}
+.dossier.readonly input,.dossier.readonly textarea{
+  opacity:.78;
+  cursor:default;
+  border-color:transparent;
+  background:color-mix(in srgb,var(--input-bg) 60%,transparent);
+}
+
+/* ══════════════════════════════════════════════════════════
+   VISIT BANNER
+   ══════════════════════════════════════════════════════════ */
+.visit-banner{
+  position:fixed;
+  top:16px;left:50%;
+  transform:translate(-50%,-140%);
+  z-index:90;
+  display:flex;align-items:center;gap:12px;
+  padding:9px 10px 9px 16px;
+  border-radius:100px;
+  font-size:12.5px;font-weight:600;
+  border-color:color-mix(in srgb,var(--accent-2) 45%,transparent);
+  transition:transform .5s var(--ease), opacity .4s var(--ease);
+  opacity:0;
+  max-width:calc(100vw - 32px);
+}
+.visit-banner.show{transform:translate(-50%,0);opacity:1;}
+.visit-banner .eye{font-size:14px;}
+.visit-banner .btn{padding:6px 13px;font-size:11.5px;border-radius:100px;}
+
+/* ══════════════════════════════════════════════════════════
+   OVERLAYS & MODALS
+   ══════════════════════════════════════════════════════════ */
+.overlay{
+  position:fixed;inset:0;
+  z-index:120;
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;
+  background:rgba(2,3,10,.62);
+  -webkit-backdrop-filter:blur(6px);
+  backdrop-filter:blur(6px);
+  opacity:0;pointer-events:none;
+  transition:opacity .32s var(--ease);
+}
+[data-theme="light"] .overlay{background:rgba(210,222,242,.66);}
+.overlay.show{opacity:1;pointer-events:auto;}
+.modal{
+  width:100%;max-width:420px;
+  border-radius:22px;
+  padding:26px;
+  transform:translateY(18px) scale(.97);
+  transition:transform .42s var(--ease);
+  max-height:calc(100vh - 40px);
+  overflow-y:auto;
+}
+.overlay.show .modal{transform:none;}
+.modal.wide{max-width:540px;}
+.modal h2{margin:0 0 6px;font-size:19px;font-weight:700;letter-spacing:.3px;}
+.modal > p{margin:0 0 18px;}
+.modal-actions{display:flex;gap:10px;margin-top:20px;}
+.modal-actions .btn{flex:1;}
+.modal-icon{
+  width:52px;height:52px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;margin-bottom:14px;
+  background:color-mix(in srgb,var(--accent) 16%,transparent);
+  border:1px solid var(--border);
+}
+.spinner{
+  width:38px;height:38px;border-radius:50%;
+  border:3px solid color-mix(in srgb,var(--accent) 22%,transparent);
+  border-top-color:var(--accent);
+  animation:spin .85s linear infinite;
+  margin:6px auto 18px;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+.center{text-align:center;}
+.step-user{
+  display:flex;align-items:center;gap:12px;
+  padding:13px;border-radius:14px;
+  background:var(--input-bg);
+  border:1px solid var(--border);
+  margin-bottom:16px;
+}
+.step-user .user-name{font-size:14px;}
+.check-big{
+  font-size:34px;color:var(--ok);
+  margin-bottom:10px;
+  animation:pop .45s var(--ease);
+}
+@keyframes pop{0%{transform:scale(.4);opacity:0;}70%{transform:scale(1.12);}100%{transform:scale(1);opacity:1;}}
+
+/* ACCESS LOG */
+.log-list{
+  display:flex;flex-direction:column;gap:7px;
+  max-height:52vh;overflow-y:auto;
+  margin:6px -6px 4px;padding:0 6px;
+}
+.log-row{
+  display:flex;align-items:center;gap:11px;
+  padding:10px 11px;
+  border-radius:13px;
+  background:var(--input-bg);
+  border:1px solid var(--border);
+}
+.log-row .user-meta{flex:1;min-width:0;}
+.log-stats{
+  text-align:right;font-size:10.5px;color:var(--muted);
+  font-variant-numeric:tabular-nums;line-height:1.35;
+  white-space:nowrap;
+}
+.log-stats b{color:var(--accent);font-size:12px;}
+
+/* ══════════════════════════════════════════════════════════
+   TOASTS
+   ══════════════════════════════════════════════════════════ */
+#toasts{
+  position:fixed;
+  bottom:20px;left:50%;
+  transform:translateX(-50%);
+  z-index:200;
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  pointer-events:none;
+  width:min(420px,calc(100vw - 32px));
+}
+.toast{
+  padding:10px 18px;
+  border-radius:100px;
+  font-size:12.5px;font-weight:600;
+  background:var(--panel-solid);
+  -webkit-backdrop-filter:blur(18px);
+  backdrop-filter:blur(18px);
+  border:1px solid var(--border-strong);
+  box-shadow:var(--shadow);
+  color:var(--text);
+  animation:toastIn .38s var(--ease);
+  transition:opacity .3s var(--ease), transform .3s var(--ease);
+  max-width:100%;
+  text-align:center;
+}
+.toast.out{opacity:0;transform:translateY(10px) scale(.95);}
+.toast.ok{border-color:color-mix(in srgb,var(--ok) 55%,transparent);}
+.toast.warn{border-color:color-mix(in srgb,var(--warn) 55%,transparent);}
+@keyframes toastIn{from{opacity:0;transform:translateY(16px) scale(.94);}}
+
+/* ══════════════════════════════════════════════════════════
+   RESPONSIVE
+   ══════════════════════════════════════════════════════════ */
+@media (max-width:760px){
+  :root{--dossier-w:100%;}
+  .dossier{width:100%;border-left:none;}
+  .online-panel{width:calc(100vw - 92px);max-width:270px;}
+  .menu-panel{width:calc(100vw - 32px);right:16px;}
+  .modal{padding:22px;}
+  .facts{grid-template-columns:1fr 1fr;}
+  .visit-banner{
+    top:auto;bottom:16px;
+    transform:translate(-50%,140%);
+    font-size:11.5px;
+  }
+  .visit-banner.show{transform:translate(-50%,0);}
+  #toasts{bottom:76px;}
+}
+@media (max-width:420px){
+  .facts{grid-template-columns:1fr;}
+  .online-panel{width:calc(100vw - 88px);}
+}
+</style>
+</head>
+<body>
+
+<canvas id="space" aria-label="Vaelora solar system view"></canvas>
+
+<!-- ══════════ VISIT BANNER ══════════ -->
+<div id="visitBanner" class="visit-banner glass" role="status" aria-live="polite">
+  <span class="eye" aria-hidden="true">👁</span>
+  <span id="visitBannerText">Viewing —</span>
+  <button id="returnToMine" class="btn primary">Return to mine</button>
+</div>
+
+<!-- ══════════ ONLINE NOW ══════════ -->
+<aside id="onlinePanel" class="online-panel glass" aria-label="Users online">
+  <button class="online-head" id="onlineToggle" aria-expanded="true" aria-controls="onlineBody">
+    <span class="dot-live" aria-hidden="true"></span>
+    <span class="online-title">Online Now</span>
+    <span class="online-count" id="onlineCount">0</span>
+    <span class="chev" aria-hidden="true">▾</span>
+  </button>
+  <div class="online-body" id="onlineBody"></div>
+</aside>
+
+<!-- ══════════ HAMBURGER ══════════ -->
+<button id="menuBtn" class="menu-btn glass" aria-label="Open menu" aria-expanded="false" aria-controls="menuPanel">
+  <span aria-hidden="true"></span>
+  <span aria-hidden="true"></span>
+  <span aria-hidden="true"></span>
+</button>
+
+<nav id="menuPanel" class="menu-panel glass" aria-label="Main menu" aria-hidden="true">
+  <div class="menu-brand">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <div>
+      <h1>Vaelora System</h1>
+      <p>Interactive orrery · v2</p>
+    </div>
+  </div>
+
+  <div class="menu-group">
+    <span class="menu-label">Simulation</span>
+    <button id="pauseBtn" class="btn block">⏸ Pause orbits</button>
+  </div>
+
+  <div class="menu-group">
+    <div class="speed-head">
+      <span class="menu-label" style="margin:0">Orbital speed</span>
+      <span class="speed-val" id="speedVal">1.0×</span>
+    </div>
+    <input id="speedRange" type="range" min="0" max="3" step="0.1" value="1"
+           aria-label="Orbital speed multiplier">
+  </div>
+
+  <div class="menu-group">
+    <span class="menu-label">Appearance</span>
+    <div class="toggle" id="themeToggle" role="switch" aria-checked="false" tabindex="0">
+      <span id="themeLabel">Dark theme</span>
+      <span class="switch" id="themeSwitch" aria-hidden="true"></span>
+    </div>
+  </div>
+
+  <div class="menu-group">
+    <label class="menu-label" for="sunInput">Star appearance (image URL)</label>
+    <input id="sunInput" type="url" placeholder="https://…/sun.jpg" autocomplete="off">
+  </div>
+
+  <div class="menu-group" style="margin-bottom:0">
+    <span class="menu-label">Account</span>
+    <div class="user-card">
+      <span id="menuAvatar" class="avatar" style="width:34px;height:34px;"></span>
+      <div class="user-meta">
+        <div class="user-name" id="menuUserName">—</div>
+        <div class="user-sub" id="menuUserSub">—</div>
+      </div>
+      <button id="switchUser" class="btn sm">Switch</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ══════════ DOSSIER ══════════ -->
+<aside id="dossier" class="dossier glass" aria-hidden="true" aria-label="Planet dossier">
+  <div class="dossier-head">
+    <span class="dossier-dot" id="dossierDot" aria-hidden="true"></span>
+    <div class="dossier-title-wrap">
+      <h2 id="dossierName">—</h2>
+      <p id="dossierTagline">—</p>
+    </div>
+    <button id="dossierClose" class="icon-btn" aria-label="Close dossier">✕</button>
+  </div>
+
+  <div class="dossier-body">
+    <label class="field"><span>Name</span><input id="f-name" type="text" maxlength="40" autocomplete="off"></label>
+    <label class="field"><span>Tagline</span><input id="f-tagline" type="text" maxlength="60" autocomplete="off"></label>
+    <label class="field"><span>Map texture (URL)</span><input id="f-texture" type="url" placeholder="https://…/texture.jpg" autocomplete="off"></label>
+    <label class="field"><span>Description</span><textarea id="f-desc" rows="4"></textarea></label>
+
+    <h3 class="section-title">Moons</h3>
+    <div id="moonsEditor" class="moons-editor"></div>
+    <button id="addMoon" class="btn sm block" style="margin-top:8px">+ Add moon</button>
+
+    <h3 class="section-title">Media</h3>
+    <label class="field"><span>Dossier image URL</span><input id="f-image" type="url" placeholder="https://…/photo.jpg" autocomplete="off"></label>
+    <div class="preview" id="imgPreview"></div>
+
+    <label class="field"><span>Video URL (YouTube · Vimeo · .mp4)</span><input id="f-video" type="url" placeholder="https://youtube.com/watch?v=…" autocomplete="off"></label>
+    <div class="preview" id="videoPreview"></div>
+
+    <h3 class="section-title">Factual data</h3>
+    <div class="facts">
+      <label class="field"><span>Diameter</span><input id="f-diameter" type="text"></label>
+      <label class="field"><span>Distance</span><input id="f-distance" type="text"></label>
+      <label class="field"><span>Period</span><input id="f-period" type="text"></label>
+      <label class="field"><span>Rotation</span><input id="f-rotation" type="text"></label>
+      <label class="field"><span>Moons</span><input id="f-moons" type="text"></label>
+      <label class="field"><span>Class</span><input id="f-class" type="text"></label>
+    </div>
+  </div>
+
+  <div class="dossier-foot">
+    <button id="saveDossier" class="btn primary">Save dossier</button>
+    <button id="resetDossier" class="btn ghost">Reset</button>
+    <span id="readonlyNote" class="readonly-note hidden">Read-only mode</span>
+  </div>
+</aside>
+
+<!-- ══════════ LOGIN MODAL ══════════ -->
+<div id="loginModal" class="overlay" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+  <div class="modal glass">
+    <div class="modal-icon" aria-hidden="true">✦</div>
+    <h2 id="loginTitle">Enter Vaelora</h2>
+    <p class="muted">Choose a name. Every traveller gets their own private solar system, saved on this device.</p>
+    <label class="field"><span>Your name</span>
+      <input id="loginName" type="text" maxlength="24" placeholder="e.g. Lyra Voss" autocomplete="off">
+    </label>
+    <div class="modal-actions">
+      <button id="loginBtn" class="btn primary">Enter</button>
+      <button id="skipBtn" class="btn ghost">Skip</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ VISIT REQUEST MODAL ══════════ -->
+<div id="visitModal" class="overlay" role="dialog" aria-modal="true" aria-labelledby="visitTitle">
+  <div class="modal glass">
+    <div id="visitStep1">
+      <div class="modal-icon" aria-hidden="true">🛰</div>
+      <h2 id="visitTitle">Request a visit</h2>
+      <p class="muted">You are about to ask for read-only access to this system.</p>
+      <div class="step-user">
+        <span id="visitAvatar" class="avatar" style="width:40px;height:40px;"></span>
+        <div class="user-meta">
+          <div class="user-name" id="visitName">—</div>
+          <div class="user-sub" id="visitSub">—</div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="sendRequest" class="btn primary">Send request</button>
+        <button id="cancelVisit" class="btn ghost">Cancel</button>
+      </div>
+    </div>
+    <div id="visitStep2" class="hidden center">
+      <div class="spinner" aria-hidden="true"></div>
+      <h2>Waiting for them to respond…</h2>
+      <p class="muted">Establishing a secure relay to their system.</p>
+    </div>
+    <div id="visitStep3" class="hidden center">
+      <div class="check-big" aria-hidden="true">✓</div>
+      <h2>Access granted</h2>
+      <p class="muted">Entering their system now.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ ACCESS LOG (EASTER EGG) ══════════ -->
+<div id="logModal" class="overlay" role="dialog" aria-modal="true" aria-labelledby="logTitle">
+  <div class="modal glass wide">
+    <div class="modal-icon" aria-hidden="true">🗝</div>
+    <h2 id="logTitle">Access Log</h2>
+    <p class="muted">Hidden registry · every traveller recorded on this device.</p>
+    <div id="logList" class="log-list"></div>
+    <div class="modal-actions">
+      <button id="logChangeUser" class="btn primary">Change user</button>
+      <button id="logClear" class="btn ghost">Clear log</button>
+      <button id="logClose" class="btn ghost">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="toasts" aria-live="polite" aria-atomic="false"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ══════════════════════════════════════════════════════════
+   HELPERS
+   ══════════════════════════════════════════════════════════ */
+const $  = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+const clamp = (v,a,b) => Math.min(b, Math.max(a, v));
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => (
+  {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+));
+function hexA(hex, a){
+  if(!hex) return 'rgba(0,0,0,'+a+')';
+  if(hex[0] !== '#') return hex;
+  let h = hex.slice(1);
+  if(h.length === 3) h = h.split('').map(c => c + c).join('');
+  const n = parseInt(h, 16);
+  return 'rgba(' + ((n>>16)&255) + ',' + ((n>>8)&255) + ',' + (n&255) + ',' + a + ')';
+}
+function shiftHue(hex, deg){
+  if(!hex || hex[0] !== '#') return hex;
+  let h = hex.slice(1);
+  if(h.length === 3) h = h.split('').map(c => c + c).join('');
+  let r = parseInt(h.slice(0,2),16)/255;
+  let g = parseInt(h.slice(2,4),16)/255;
+  let b = parseInt(h.slice(4,6),16)/255;
+  const max = Math.max(r,g,b), min = Math.min(r,g,b);
+  let hue=0, sat=0, lig=(max+min)/2;
+  const d = max-min;
+  if(d){
+    sat = lig > 0.5 ? d/(2-max-min) : d/(max+min);
+    switch(max){
+      case r: hue = (g-b)/d + (g<b?6:0); break;
+      case g: hue = (b-r)/d + 2; break;
+      case b: hue = (r-g)/d + 4; break;
+    }
+    hue *= 60;
+  }
+  hue = (hue + deg) % 360; if(hue < 0) hue += 360;
+
+  function hue2rgb(p,q,t){
+    if(t<0)t+=1; if(t>1)t-=1;
+    if(t<1/6) return p+(q-p)*6*t;
+    if(t<1/2) return q;
+    if(t<2/3) return p+(q-p)*(2/3-t)*6;
+    return p;
+  }
+  let R,G,B;
+  if(sat === 0){ R=G=B=lig; }
+  else{
+    const q = lig < 0.5 ? lig*(1+sat) : lig+sat-lig*sat;
+    const p = 2*lig-q;
+    R = hue2rgb(p,q,hue/360+1/3);
+    G = hue2rgb(p,q,hue/360);
+    B = hue2rgb(p,q,hue/360-1/3);
+  }
+  const to = v => Math.round(clamp(v,0,1)*255).toString(16).padStart(2,'0');
+  return '#' + to(R) + to(G) + to(B);
+}
+function debounce(fn, ms){
+  let t;
+  return function(){
+    const ctx = this, args = arguments;
+    clearTimeout(t);
+    t = setTimeout(() => fn.apply(ctx, args), ms);
+  };
+}
+function hashStr(s){
+  let h = 2166136261;
+  for(let i=0; i<s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+const AV_COLORS = ['#7fd4ff','#8b7dff','#ff8b3d','#5fe08a','#ffd75e','#b8443a','#4fd1c5','#f472b6','#a78bfa','#38bdf8'];
+function avatarFor(name){
+  const n = String(name || '?');
+  const idx = hashStr(n) % AV_COLORS.length;
+  const initials = n.trim().split(/\s+/).map(w => w[0] || '').slice(0,2).join('').toUpperCase() || '?';
+  return { color: AV_COLORS[idx], initials };
+}
+function avatarHTML(name, size){
+  size = size || 30;
+  const a = avatarFor(name);
+  return '<span class="avatar" style="width:'+size+'px;height:'+size+'px;background:'+a.color+'22;color:'+a.color+';border-color:'+a.color+'66">'+esc(a.initials)+'</span>';
+}
+function fmtDate(ts){
+  if(!ts) return '—';
+  const d = new Date(ts);
+  return d.toLocaleDateString(undefined,{day:'2-digit',month:'short',year:'numeric'}) +
+         ' · ' + d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+}
+function relTime(ts){
+  if(!ts) return 'never';
+  const s = Math.floor((Date.now()-ts)/1000);
+  if(s < 60) return 'just now';
+  if(s < 3600) return Math.floor(s/60) + 'm ago';
+  if(s < 86400) return Math.floor(s/3600) + 'h ago';
+  return Math.floor(s/86400) + 'd ago';
+}
+function randPhase(){ return Math.random() * Math.PI * 2; }
+
+/* ══════════════════════════════════════════════════════════
+   CONSTANTS
+   ══════════════════════════════════════════════════════════ */
+const FLATTEN = 0.92;
+const SUN_R = 34;
+const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+
+/* Vivid, saturated planet palette */
+const PLANET_DEFS = [
+  {
+    id:'aethon', name:'Aethon', tagline:'The Cinder Frontier',
+    color:'#ff7a1a', color2:'#ffbe5c', r:6, a:112, period:14, phase:0.4,
+    moons:[], ring:false,
+    description:'A scorched world of basalt plains and rivers of molten glass, Aethon orbits so close to Vaelora that its dayside never truly cools. Prospectors prize its rare-metal dust, though few linger long.',
+    facts:{ diameter:'4,820 km', distance:'0.31 AU', period:'14 d', rotation:'9h 12m', moons:'0', class:'Terrestrial' }
+  },
+  {
+    id:'nivara', name:'Nivara', tagline:'Crown of Frozen Tides',
+    color:'#43c4ff', color2:'#b6ecff', r:8, a:168, period:22, phase:1.8,
+    moons:[], ring:false,
+    description:'Nivara is sheathed in a kilometres-deep ocean locked beneath a fractured shell of blue ice. Geysers of vapour trace bright scars across its surface, visible from the inner worlds.',
+    facts:{ diameter:'9,140 km', distance:'0.58 AU', period:'22 d', rotation:'26h 40m', moons:'0', class:'Ice World' }
+  },
+  {
+    id:'sylvan', name:'Sylvan', tagline:'The Verdant Choir',
+    color:'#22d67a', color2:'#a4ffca', r:10, a:228, period:34, phase:3.1,
+    moons:[{ r:2.2, dist:20, speed:2.4, phase:0, color:'#e0ffe9' }], ring:false,
+    description:'Endless fungal forests cover Sylvan, their spores glowing faintly in the perpetual twilight. Its single moon, Fen, tugs the canopy into slow luminous waves.',
+    facts:{ diameter:'12,600 km', distance:'0.94 AU', period:'34 d', rotation:'31h 05m', moons:'1', class:'Garden World' }
+  },
+  {
+    id:'cyrenne', name:'Cyrenne', tagline:'The Ringed Sovereign',
+    color:'#ffc722', color2:'#fff0a8', r:12, a:296, period:50, phase:4.6,
+    moons:[], ring:true,
+    description:"Cyrenne's amber clouds hide a crushing metallic core. Its vast ring system of ice and gold dust is the most photographed sight in the Vaelora system.",
+    facts:{ diameter:'48,300 km', distance:'1.42 AU', period:'50 d', rotation:'14h 22m', moons:'0', class:'Gas Giant' }
+  },
+  {
+    id:'drathos', name:'Drathos', tagline:'Ember Warden',
+    color:'#e63946', color2:'#ff9a8b', r:11, a:368, period:70, phase:5.5,
+    moons:[{ r:2, dist:19, speed:-1.8, phase:1.2, color:'#ffd0c4' }], ring:false,
+    description:"A dying desert planet wrapped in iron storms. Drathos' moon, Vurn, is a captured asteroid that traces a decaying orbit, scattering red dust across the dunes.",
+    facts:{ diameter:'7,980 km', distance:'2.05 AU', period:'70 d', rotation:'22h 10m', moons:'1', class:'Desert World' }
+  },
+  {
+    id:'elyon', name:'Elyon', tagline:'The Violet Expanse',
+    color:'#a855f7', color2:'#e0c4ff', r:9.5, a:448, period:95, phase:2.4,
+    moons:[], ring:false,
+    description:'At the cold edge of the system, Elyon drifts through a haze of violet methane. Its surface is a glassy ocean of frozen nitrogen that mirrors the stars.',
+    facts:{ diameter:'21,400 km', distance:'3.10 AU', period:'95 d', rotation:'40h 30m', moons:'0', class:'Ice Giant' }
+  }
+];
+
+const SIM_USERS = [
+  { name:'Lyra Voss',    status:'online' },
+  { name:'Kael Orion',   status:'online' },
+  { name:'Mira Solace',  status:'away'   },
+  { name:'Thane Rook',   status:'online' },
+  { name:'Isolde Nyx',   status:'away'   },
+  { name:'Cassian Vale', status:'online' }
+];
+
+const THEMES = {
+  dark: {
+    bg:'#02030a',
+    star:'255,255,255',
+    orbit:'rgba(127,212,255,0.15)',
+    sunA:'rgba(255,246,216,0.95)',
+    sunB:'rgba(255,176,64,0.34)',
+    sunC:'rgba(255,110,20,0)',
+    label:'#e8f1ff'
+  },
+  light: {
+    bg:'#eef3fb',
+    star:'58,88,140',
+    orbit:'rgba(37,99,235,0.17)',
+    sunA:'rgba(255,224,130,0.95)',
+    sunB:'rgba(255,170,60,0.28)',
+    sunC:'rgba(255,140,40,0)',
+    label:'#0d1b33'
+  }
+};
+
+const LS = {
+  users:   'vaelora-users-v2',
+  current: 'vaelora-current-user',
+  theme:   'vaelora-theme',
+  sys:  u => 'vaelora-system-v2::' + u,
+  sun:  u => 'vaelora-sun-v2::' + u
+};
+
+/* ══════════════════════════════════════════════════════════
+   DOM REFS
+   ══════════════════════════════════════════════════════════ */
+const canvas   = $('#space');
+const ctx      = canvas.getContext('2d', { alpha:false });
+const dossier  = $('#dossier');
+const menuBtn  = $('#menuBtn');
+const menuPanel= $('#menuPanel');
+const toasts   = $('#toasts');
+const onlineBody = $('#onlineBody');
+
+/* ══════════════════════════════════════════════════════════
+   STATE
+   ══════════════════════════════════════════════════════════ */
+const state = {
+  user: null,
+  system: null,
+  sun: { texture:'' },
+  readonly: false,
+  viewUser: null,
+  theme: 'dark',
+  paused: false,
+  speed: 1,
+  openPlanet: null,
+  dossierOpen: false,
+  menuOpen: false
+};
+
+let TH = THEMES.dark;
+let DPR = 1;
+let runtime = [];
+const angles = {};
+
+const cam = { x:0, y:0, zoom:1, tx:0, ty:0, tzoom:1 };
+
+let hoverPlanet = null;
+let hoverSun = false;
+const mouse = { x:-1, y:-1, on:false };
+
+const texCache = {};
+const sunClicks = [];
+
+/* ══════════════════════════════════════════════════════════
+   STORAGE — USERS
+   ══════════════════════════════════════════════════════════ */
+function getUsers(){
+  try{
+    const raw = localStorage.getItem(LS.users);
+    if(!raw) return {};
+    const d = JSON.parse(raw);
+    return (d && typeof d === 'object') ? d : {};
+  }catch(e){ return {}; }
+}
+function setUsers(u){
+  try{ localStorage.setItem(LS.users, JSON.stringify(u)); }catch(e){}
+}
+
+/* ══════════════════════════════════════════════════════════
+   STORAGE — SYSTEM DATA
+   ══════════════════════════════════════════════════════════ */
+function defaultSystem(){
+  const s = { planets:{}, sun:{ texture:'' } };
+  PLANET_DEFS.forEach(p => {
+    s.planets[p.id] = {
+      name: p.name,
+      tagline: p.tagline,
+      texture: '',
+      description: p.description,
+      image: '',
+      video: '',
+      moons: p.moons.map(m => Object.assign({}, m)),
+      facts: Object.assign({}, p.facts)
+    };
+  });
+  return s;
+}
+
+function sanitizeMoons(raw, fallback){
+  if(!Array.isArray(raw)) return (fallback || []).map(m => Object.assign({}, m));
+  return raw.filter(m => m && typeof m === 'object').map(m => ({
+    r: clamp(parseFloat(m.r) || 2, 0.4, 8),
+    dist: clamp(parseFloat(m.dist) || 20, 8, 70),
+    speed: clamp(parseFloat(m.speed) || 1, -6, 6),
+    phase: (typeof m.phase === 'number' && isFinite(m.phase)) ? m.phase : randPhase(),
+    color: (typeof m.color === 'string' && /^#[0-9a-f]{6}$/i.test(m.color)) ? m.color : '#dfe8f3'
+  }));
+}
+
+function mergeDefaults(raw){
+  const base = defaultSystem();
+  if(!raw || typeof raw !== 'object') return base;
+  if(raw.planets && typeof raw.planets === 'object'){
+    PLANET_DEFS.forEach(p => {
+      const inc = raw.planets[p.id];
+      if(inc && typeof inc === 'object'){
+        const t = base.planets[p.id];
+        t.name = typeof inc.name === 'string' ? inc.name : t.name;
+        t.tagline = typeof inc.tagline === 'string' ? inc.tagline : t.tagline;
+        t.texture = typeof inc.texture === 'string' ? inc.texture : '';
+        t.description = typeof inc.description === 'string' ? inc.description : t.description;
+        t.image = typeof inc.image === 'string' ? inc.image : '';
+        t.video = typeof inc.video === 'string' ? inc.video : '';
+        t.moons = sanitizeMoons(inc.moons, p.moons);
+        if(inc.facts && typeof inc.facts === 'object'){
+          Object.keys(t.facts).forEach(k => {
+            if(typeof inc.facts[k] === 'string') t.facts[k] = inc.facts[k];
+          });
+        }
+      }
+    });
+  }
+  return base;
+}
+function loadSystem(user){
+  try{
+    const raw = localStorage.getItem(LS.sys(user));
+    if(raw) return mergeDefaults(JSON.parse(raw));
+  }catch(e){}
+  return defaultSystem();
+}
+function loadSun(user){
+  try{
+    const raw = localStorage.getItem(LS.sun(user));
+    if(raw){
+      const d = JSON.parse(raw);
+      if(d && typeof d.texture === 'string') return { texture: d.texture };
+    }
+  }catch(e){}
+  return { texture:'' };
+}
+function saveSystem(){
+  if(state.readonly || !state.user) return;
+  try{
+    localStorage.setItem(LS.sys(state.user), JSON.stringify(state.system));
+    localStorage.setItem(LS.sun(state.user), JSON.stringify(state.sun));
+  }catch(e){
+    toast('Could not save — storage full or blocked', 'warn');
+  }
+}
+
+/* Global debounced autosave, used everywhere. */
+const autosave = debounce(() => {
+  if(state.readonly || !state.user) return;
+  saveSystem();
+}, 700);
+
+/* ══════════════════════════════════════════════════════════
+   TEXTURE CACHE
+   ══════════════════════════════════════════════════════════ */
+function getTexture(url){
+  if(!url) return null;
+  let e = texCache[url];
+  if(!e){
+    const img = new Image();
+    e = texCache[url] = { ready:false, failed:false, img:img };
+    img.onload  = () => { e.ready = true; };
+    img.onerror = () => { e.failed = true; };
+    img.src = url;
+  }
+  return e;
+}
+
+/* ══════════════════════════════════════════════════════════
+   RUNTIME PLANETS
+   ══════════════════════════════════════════════════════════ */
+function buildRuntime(){
+  runtime = PLANET_DEFS.map(def => {
+    if(angles[def.id] === undefined) angles[def.id] = def.phase;
+    return {
+      def: def,
+      data: state.system.planets[def.id],
+      angle: angles[def.id],
+      x: Math.cos(angles[def.id]) * def.a,
+      y: Math.sin(angles[def.id]) * def.a * FLATTEN
+    };
+  });
+}
+
+/* ══════════════════════════════════════════════════════════
+   CANVAS SIZING / PROJECTION
+   ══════════════════════════════════════════════════════════ */
+function resizeCanvas(){
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  const w = canvas.clientWidth || window.innerWidth;
+  const h = canvas.clientHeight || window.innerHeight;
+  canvas.width  = Math.round(w * DPR);
+  canvas.height = Math.round(h * DPR);
+}
+function viewScale(w, h){
+  return Math.max(Math.min(w / 1150, h / 980), 0.22);
+}
+function screenToWorld(sx, sy){
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  const vs = viewScale(w, h) * cam.zoom;
+  return { x: (sx - w/2) / vs + cam.x, y: (sy - h/2) / vs + cam.y };
+}
+function worldToScreen(wx, wy){
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  const vs = viewScale(w, h) * cam.zoom;
+  return { x: (wx - cam.x) * vs + w/2, y: (wy - cam.y) * vs + h/2 };
+}
+function pickPlanet(wp){
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  const vs = viewScale(w, h) * cam.zoom;
+  let best = null, bestD = Infinity;
+  for(const p of runtime){
+    const d = Math.hypot(wp.x - p.x, wp.y - p.y);
+    const threshold = Math.max(p.def.r, 15 / vs);
+    if(d <= threshold && d < bestD){ best = p; bestD = d; }
+  }
+  return best;
+}
+
+/* ══════════════════════════════════════════════════════════
+   STARS
+   ══════════════════════════════════════════════════════════ */
+let stars = [];
+function makeStars(){
+  stars = [];
+  const n = window.innerWidth < 700 ? 150 : 280;
+  for(let i=0; i<n; i++){
+    stars.push({
+      x: Math.random(),
+      y: Math.random(),
+      r: Math.random() * 1.25 + 0.28,
+      p: 0.008 + Math.random() * 0.05,
+      tw: Math.random() * Math.PI * 2,
+      ts: 0.5 + Math.random() * 1.9
+    });
+  }
+}
+function drawStars(w, h, dt){
+  const rgb = TH.star;
+  ctx.save();
+  for(let i=0; i<stars.length; i++){
+    const s = stars[i];
+    s.tw += dt * s.ts;
+    const alpha = 0.28 + 0.72 * (0.5 + 0.5 * Math.sin(s.tw));
+    let sx = (s.x * w - cam.x * s.p) % w; if(sx < 0) sx += w;
+    let sy = (s.y * h - cam.y * s.p) % h; if(sy < 0) sy += h;
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = 'rgb(' + rgb + ')';
+    ctx.beginPath();
+    ctx.arc(sx, sy, s.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+/* ══════════════════════════════════════════════════════════
+   DRAWING — COLORFUL PLANETS
+   ══════════════════════════════════════════════════════════ */
+function strokeRing(x, y, rx, ry, w, start, end, col1, col2){
+  ctx.beginPath();
+  ctx.ellipse(x, y, rx, ry, 0, start, end);
+  ctx.lineWidth = w;
+  ctx.strokeStyle = col1;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.ellipse(x, y, rx * 1.16, ry * 1.16, 0, start, end);
+  ctx.lineWidth = w * 0.42;
+  ctx.strokeStyle = col2;
+  ctx.stroke();
+}
+
+function drawPlanet(p, vs){
+  const x = p.x, y = p.y, r = p.def.r;
+  const col  = p.def.color  || '#7fd4ff';
+  const col2 = p.def.color2 || shiftHue(col, 30);
+
+  /* ── Wide multi-layer atmosphere ─────────────────────── */
+  const g1 = ctx.createRadialGradient(x, y, r * 0.7, x, y, r * 4.2);
+  g1.addColorStop(0,    hexA(col,  0.40));
+  g1.addColorStop(0.32, hexA(col,  0.16));
+  g1.addColorStop(0.68, hexA(col2, 0.06));
+  g1.addColorStop(1,    hexA(col,  0));
+  ctx.fillStyle = g1;
+  ctx.beginPath(); ctx.arc(x, y, r * 4.2, 0, Math.PI * 2); ctx.fill();
+
+  /* ── Inner vibrant corona ────────────────────────────── */
+  const g2 = ctx.createRadialGradient(x, y, r * 0.9, x, y, r * 1.9);
+  g2.addColorStop(0, hexA(col2, 0.42));
+  g2.addColorStop(1, hexA(col2, 0));
+  ctx.fillStyle = g2;
+  ctx.beginPath(); ctx.arc(x, y, r * 1.9, 0, Math.PI * 2); ctx.fill();
+
+  /* ── Ring — back half ────────────────────────────────── */
+  if(p.def.ring){
+    strokeRing(x, y, r * 2.15, r * 0.78, r * 0.55, Math.PI, Math.PI * 2,
+      hexA(col2, 0.55), hexA(col, 0.34));
+  }
+
+  /* ── Body: vivid radial base + texture + lighting ────── */
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.closePath();
+  ctx.clip();
+
+  const body = ctx.createRadialGradient(x - r*0.3, y - r*0.35, r*0.05, x, y, r*1.25);
+  body.addColorStop(0,    col2);
+  body.addColorStop(0.42, col);
+  body.addColorStop(1,    shiftHue(col, -18));
+  ctx.fillStyle = body;
+  ctx.fillRect(x - r, y - r, r * 2, r * 2);
+
+  const tex = getTexture(p.data.texture);
+  if(tex && tex.ready && tex.img.naturalWidth){
+    ctx.globalAlpha = 0.94;
+    ctx.drawImage(tex.img, x - r, y - r, r * 2, r * 2);
+    ctx.globalAlpha = 1;
+  }
+
+  /* Specular highlight */
+  const hl = ctx.createRadialGradient(x - r*0.48, y - r*0.5, r*0.02, x - r*0.1, y - r*0.1, r*1.05);
+  hl.addColorStop(0,    'rgba(255,255,255,0.62)');
+  hl.addColorStop(0.34, 'rgba(255,255,255,0.08)');
+  hl.addColorStop(0.7,  'rgba(0,0,0,0)');
+  hl.addColorStop(1,    'rgba(0,0,0,0.72)');
+  ctx.fillStyle = hl;
+  ctx.fillRect(x - r, y - r, r * 2, r * 2);
+
+  /* Terminator shading */
+  const sh = ctx.createRadialGradient(x + r*0.6, y + r*0.55, r*0.1, x, y, r*1.15);
+  sh.addColorStop(0, 'rgba(0,0,0,0.35)');
+  sh.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = sh;
+  ctx.fillRect(x - r, y - r, r * 2, r * 2);
+
+  ctx.restore();
+
+  /* ── Saturated rim light ─────────────────────────────── */
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.lineWidth = 1.3 / vs;
+  ctx.strokeStyle = hexA(col2, 0.95);
+  ctx.stroke();
+
+  /* ── Ring — front half ───────────────────────────────── */
+  if(p.def.ring){
+    strokeRing(x, y, r * 2.15, r * 0.78, r * 0.55, 0, Math.PI,
+      hexA(col2, 0.65), hexA(col, 0.4));
+  }
+
+  /* ── Moons — read live from p.data.moons ─────────────── */
+  const moons = p.data.moons || [];
+  for(let i=0; i<moons.length; i++){
+    const m = moons[i];
+    const ma = p.angle * (m.speed || 1) + (m.phase || 0);
+    const mx = x + Math.cos(ma) * m.dist;
+    const my = y + Math.sin(ma) * m.dist * FLATTEN;
+    const mr = m.r || 2;
+    const mc = m.color || '#dfe8f3';
+
+    /* Moon glow */
+    const mg = ctx.createRadialGradient(mx, my, mr*0.3, mx, my, mr*2.6);
+    mg.addColorStop(0, hexA(mc, 0.34));
+    mg.addColorStop(1, hexA(mc, 0));
+    ctx.fillStyle = mg;
+    ctx.beginPath(); ctx.arc(mx, my, mr*2.6, 0, Math.PI*2); ctx.fill();
+
+    /* Moon body */
+    const mb = ctx.createRadialGradient(mx - mr*0.4, my - mr*0.4, mr*0.1, mx, my, mr*1.2);
+    mb.addColorStop(0, '#ffffff');
+    mb.addColorStop(0.5, mc);
+    mb.addColorStop(1, shiftHue(mc, -20));
+    ctx.beginPath();
+    ctx.arc(mx, my, mr, 0, Math.PI * 2);
+    ctx.fillStyle = mb;
+    ctx.fill();
+
+    ctx.lineWidth = 0.55 / vs;
+    ctx.strokeStyle = hexA('#ffffff', 0.5);
+    ctx.stroke();
+  }
+}
+
+function drawSun(vs){
+  const R = SUN_R;
+  const glowK = 1 / Math.sqrt(Math.max(cam.zoom, 1));
+  const gr = R * 5 * glowK;
+
+  const g = ctx.createRadialGradient(0, 0, R * 0.12, 0, 0, gr);
+  g.addColorStop(0,    TH.sunA);
+  g.addColorStop(0.18, TH.sunB);
+  g.addColorStop(1,    TH.sunC);
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(0, 0, gr, 0, Math.PI * 2); ctx.fill();
+
+  ctx.save();
+  ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.clip();
+
+  const c = ctx.createRadialGradient(-R * 0.25, -R * 0.25, R * 0.05, 0, 0, R * 1.1);
+  c.addColorStop(0,    '#fffdf2');
+  c.addColorStop(0.55, '#ffd97a');
+  c.addColorStop(1,    '#ff9a36');
+  ctx.fillStyle = c;
+  ctx.fillRect(-R, -R, R * 2, R * 2);
+
+  const tex = getTexture(state.sun.texture);
+  if(tex && tex.ready && tex.img.naturalWidth){
+    ctx.globalAlpha = 0.72;
+    try{ ctx.globalCompositeOperation = 'overlay'; }catch(e){}
+    ctx.drawImage(tex.img, -R, -R, R * 2, R * 2);
+    try{ ctx.globalCompositeOperation = 'source-over'; }catch(e){}
+    ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+
+  if(hoverSun){
+    ctx.beginPath();
+    ctx.arc(0, 0, R * 1.28, 0, Math.PI * 2);
+    ctx.lineWidth = 1.6 / vs;
+    ctx.strokeStyle = 'rgba(255,214,120,0.85)';
+    ctx.stroke();
+  }
+}
+
+function render(dt){
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+
+  ctx.fillStyle = TH.bg;
+  ctx.fillRect(0, 0, w, h);
+
+  drawStars(w, h, dt);
+
+  const vs = viewScale(w, h) * cam.zoom;
+
+  ctx.save();
+  ctx.translate(w / 2, h / 2);
+  ctx.scale(vs, vs);
+  ctx.translate(-cam.x, -cam.y);
+
+  ctx.lineWidth = 1 / vs;
+  ctx.strokeStyle = TH.orbit;
+  for(let i=0; i<runtime.length; i++){
+    const p = runtime[i];
+    ctx.beginPath();
+    ctx.ellipse(0, 0, p.def.a, p.def.a * FLATTEN, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  const sorted = runtime.slice().sort((a, b) => a.y - b.y);
+  const back = [], front = [];
+  for(let i=0; i<sorted.length; i++){
+    if(sorted[i].y < 0) back.push(sorted[i]); else front.push(sorted[i]);
+  }
+
+  for(let i=0; i<back.length; i++) drawPlanet(back[i], vs);
+  drawSun(vs);
+  for(let i=0; i<front.length; i++) drawPlanet(front[i], vs);
+
+  ctx.restore();
+
+  if(hoverPlanet){
+    const p = hoverPlanet;
+    const s = worldToScreen(p.x, p.y);
+    const label = p.data.name || p.def.name;
+    ctx.save();
+    ctx.font = '600 12.5px Inter, -apple-system, Segoe UI, Roboto, sans-serif';
+    const tw = ctx.measureText(label).width;
+    const padX = 10, padY = 6;
+    const bx = s.x - tw/2 - padX;
+    const by = s.y - p.def.r * vs - 34;
+    ctx.fillStyle = 'rgba(8,12,26,0.82)';
+    if(state.theme === 'light') ctx.fillStyle = 'rgba(255,255,255,0.94)';
+    ctx.beginPath();
+    const rrad = 9;
+    const bw = tw + padX*2, bh = 24;
+    ctx.moveTo(bx + rrad, by);
+    ctx.arcTo(bx + bw, by, bx + bw, by + bh, rrad);
+    ctx.arcTo(bx + bw, by + bh, bx, by + bh, rrad);
+    ctx.arcTo(bx, by + bh, bx, by, rrad);
+    ctx.arcTo(bx, by, bx + bw, by, rrad);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = hexA(p.def.color, 0.7);
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = TH.label;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, s.x, by + bh/2 + 0.5);
+    ctx.restore();
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   SIMULATION LOOP
+   ══════════════════════════════════════════════════════════ */
+let lastT = 0;
+
+function update(dt){
+  const spd = state.paused ? 0 : state.speed;
+
+  for(let i=0; i<runtime.length; i++){
+    const p = runtime[i];
+    p.angle += dt * (Math.PI * 2 / p.def.period) * spd;
+    angles[p.def.id] = p.angle;
+    p.x = Math.cos(p.angle) * p.def.a;
+    p.y = Math.sin(p.angle) * p.def.a * FLATTEN;
+  }
+
+  if(state.openPlanet){
+    const p = runtime.find(r => r.def.id === state.openPlanet);
+    if(p){
+      const w = canvas.clientWidth;
+      const wide = window.innerWidth >= 760;
+      const panelW = (wide && state.dossierOpen) ? 400 : 0;
+      const vs = viewScale(w, canvas.clientHeight) * cam.tzoom;
+      cam.tx = p.x + (panelW / 2) / Math.max(vs, 0.0001);
+      cam.ty = p.y;
+    }
+  }
+
+  const k = 1 - Math.exp(-6 * dt);
+  cam.zoom += (cam.tzoom - cam.zoom) * k;
+  cam.x    += (cam.tx   - cam.x)   * k;
+  cam.y    += (cam.ty   - cam.y)   * k;
+
+  if(mouse.on){
+    const wp = screenToWorld(mouse.x, mouse.y);
+    hoverPlanet = pickPlanet(wp);
+    hoverSun = !hoverPlanet && Math.hypot(wp.x, wp.y) <= SUN_R * 1.25;
+    canvas.style.cursor = (hoverPlanet || hoverSun) ? 'pointer' : 'default';
+  }
+}
+
+function frame(now){
+  if(!lastT) lastT = now;
+  let dt = (now - lastT) / 1000;
+  lastT = now;
+  dt = Math.min(dt, 0.06);
+  update(dt);
+  render(dt);
+  requestAnimationFrame(frame);
+}
+
+/* ══════════════════════════════════════════════════════════
+   TOASTS
+   ══════════════════════════════════════════════════════════ */
+function toast(msg, type){
+  const el = document.createElement('div');
+  el.className = 'toast' + (type ? ' ' + type : '');
+  el.textContent = msg;
+  toasts.appendChild(el);
+  setTimeout(() => {
+    el.classList.add('out');
+    setTimeout(() => el.remove(), 320);
+  }, 2500);
+}
+
+/* ══════════════════════════════════════════════════════════
+   DOSSIER
+   ══════════════════════════════════════════════════════════ */
+const FACT_KEYS = ['diameter','distance','period','rotation','moons','class'];
+
+function currentPlanetRuntime(){
+  if(!state.openPlanet) return null;
+  return runtime.find(r => r.def.id === state.openPlanet) || null;
+}
+
+function setVal(sel, v){
+  const el = $(sel);
+  if(el) el.value = v == null ? '' : v;
+}
+
+function fillDossier(p){
+  const d = p.data;
+  $('#dossierName').textContent    = d.name || p.def.name;
+  $('#dossierTagline').textContent = d.tagline || '';
+  const dot = $('#dossierDot');
+  dot.style.background = p.def.color;
+  dot.style.boxShadow = '0 0 16px ' + p.def.color;
+
+  setVal('#f-name', d.name);
+  setVal('#f-tagline', d.tagline);
+  setVal('#f-texture', d.texture);
+  setVal('#f-desc', d.description);
+  setVal('#f-image', d.image);
+  setVal('#f-video', d.video);
+  FACT_KEYS.forEach(k => setVal('#f-' + k, d.facts[k]));
+
+  renderImagePreview(d.image);
+  renderVideoPreview(d.video);
+  renderMoonsEditor(p);
+}
+
+/* ── MOONS EDITOR ───────────────────────────────────────── */
+function renderMoonsEditor(p){
+  const wrap = $('#moonsEditor');
+  const moons = p.data.moons = p.data.moons || [];
+  const ro = state.readonly;
+
+  let html = '<div class="moon-header"><span>Color</span><span>R</span><span>Dist</span><span>Speed</span><span></span></div>';
+
+  if(!moons.length){
+    html += '<p class="moons-empty muted small">No moons — add one below.</p>';
+  }else{
+    moons.forEach((m, i) => {
+      const c = /^#[0-9a-f]{6}$/i.test(m.color) ? m.color : '#dfe8f3';
+      html += '<div class="moon-row" data-i="' + i + '">' +
+        '<input type="color" value="' + c + '" data-k="color" ' + (ro ? 'disabled' : '') + ' aria-label="Moon color">' +
+        '<input type="number" value="' + (+m.r).toFixed(1) + '" step="0.1" min="0.4" max="8" data-k="r" ' + (ro ? 'disabled' : '') + ' aria-label="Moon radius">' +
+        '<input type="number" value="' + (+m.dist).toFixed(0) + '" step="1" min="8" max="70" data-k="dist" ' + (ro ? 'disabled' : '') + ' aria-label="Moon distance">' +
+        '<input type="number" value="' + (+m.speed).toFixed(1) + '" step="0.1" min="-6" max="6" data-k="speed" ' + (ro ? 'disabled' : '') + ' aria-label="Moon speed">' +
+        '<button class="moon-del" data-del="' + i + '" ' + (ro ? 'disabled' : '') + ' aria-label="Remove moon">✕</button>' +
+      '</div>';
+    });
+  }
+  wrap.innerHTML = html;
+  $('#addMoon').style.display = ro ? 'none' : '';
+
+  if(ro) return;
+
+  wrap.querySelectorAll('.moon-row').forEach(row => {
+    const i = parseInt(row.getAttribute('data-i'), 10);
+    row.querySelectorAll('input').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const k = inp.getAttribute('data-k');
+        let v = inp.value;
+        if(k === 'r' || k === 'dist' || k === 'speed'){
+          v = parseFloat(v);
+          if(!isFinite(v)) return;
+          if(k === 'r')    v = clamp(v, 0.4, 8);
+          if(k === 'dist') v = clamp(v, 8, 70);
+          if(k === 'speed')v = clamp(v, -6, 6);
+        }
+        moons[i][k] = v;
+        autosave(); // real-time visual happens via canvas next frame
+      });
+      inp.addEventListener('change', () => {
+        // normalise displayed number once editing is done
+        const k = inp.getAttribute('data-k');
+        if(k === 'r' || k === 'dist' || k === 'speed'){
+          inp.value = (+moons[i][k]).toFixed(k === 'dist' ? 0 : 1);
+        }
+      });
+    });
+  });
+
+  wrap.querySelectorAll('.moon-del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = parseInt(btn.getAttribute('data-del'), 10);
+      moons.splice(i, 1);
+      p.data.facts.moons = String(moons.length);
+      setVal('#f-moons', p.data.facts.moons);
+      renderMoonsEditor(p);
+      autosave();
+    });
+  });
+}
+
+function addMoon(){
+  const p = currentPlanetRuntime();
+  if(!p || state.readonly) return;
+  p.data.moons = p.data.moons || [];
+  const palette = ['#dfe8f3','#ffe0b3','#b8e0ff','#e0c4ff','#ffb3c1','#b8ffcf'];
+  p.data.moons.push({
+    r: 2,
+    dist: 22 + p.data.moons.length * 6,
+    speed: 1.6 + Math.random() * 0.8,
+    phase: randPhase(),
+    color: palette[p.data.moons.length % palette.length]
+  });
+  p.data.facts.moons = String(p.data.moons.length);
+  setVal('#f-moons', p.data.facts.moons);
+  renderMoonsEditor(p);
+  autosave();
+  toast('Moon added to ' + (p.data.name || p.def.name), 'ok');
+}
+
+/* ── IMAGE / VIDEO PREVIEWS ─────────────────────────────── */
+function renderImagePreview(url){
+  const el = $('#imgPreview');
+  el.innerHTML = '';
+  if(!url){ el.classList.remove('show'); return; }
+  const img = new Image();
+  img.alt = 'Dossier preview';
+  img.onerror = () => {
+    el.innerHTML = '<p class="muted small">Image could not be loaded</p>';
+  };
+  img.src = url;
+  el.appendChild(img);
+  el.classList.add('show');
+}
+
+function videoEmbed(url){
+  if(!url) return null;
+  const u = String(url).trim();
+  if(!u) return null;
+  let m;
+  if((m = u.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([\w-]{6,})/))){
+    return { type:'iframe', src:'https://www.youtube.com/embed/' + m[1] };
+  }
+  if((m = u.match(/vimeo\.com\/(?:video\/)?(\d+)/))){
+    return { type:'iframe', src:'https://player.vimeo.com/video/' + m[1] };
+  }
+  if(/^https?:\/\/.+\.(mp4|webm|ogv|ogg|mov)(\?.*)?$/i.test(u)){
+    return { type:'video', src:u };
+  }
+  return null;
+}
+
+function renderVideoPreview(url){
+  const el = $('#videoPreview');
+  el.innerHTML = '';
+  if(!url){ el.classList.remove('show'); return; }
+  const v = videoEmbed(url);
+  if(!v){
+    el.innerHTML = '<p class="muted small">Unrecognised video URL — try YouTube, Vimeo or a direct .mp4 link</p>';
+    el.classList.add('show');
+    return;
+  }
+  if(v.type === 'iframe'){
+    const f = document.createElement('iframe');
+    f.src = v.src;
+    f.loading = 'lazy';
+    f.allowFullscreen = true;
+    f.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
+    f.setAttribute('title', 'Dossier video');
+    el.appendChild(f);
+  }else{
+    const vid = document.createElement('video');
+    vid.src = v.src;
+    vid.controls = true;
+    vid.playsInline = true;
+    vid.preload = 'metadata';
+    el.appendChild(vid);
+  }
+  el.classList.add('show');
+}
+
+function setReadonlyUI(on){
+  dossier.classList.toggle('readonly', on);
+  $$('#dossier input, #dossier textarea').forEach(el => { el.readOnly = on; });
+  $('#saveDossier').style.display  = on ? 'none' : '';
+  $('#resetDossier').style.display = on ? 'none' : '';
+  $('#readonlyNote').classList.toggle('hidden', !on);
+}
+
+function openDossier(planetId){
+  const p = runtime.find(r => r.def.id === planetId);
+  if(!p) return;
+
+  state.openPlanet = planetId;
+  state.dossierOpen = true;
+
+  closeMenu();
+  document.body.classList.add('dossier-open');
+
+  dossier.classList.add('open');
+  dossier.setAttribute('aria-hidden', 'false');
+
+  fillDossier(p);
+  setReadonlyUI(state.readonly);
+
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  const vs = viewScale(w, h);
+  const screenR = 40;
+  cam.tzoom = clamp(screenR / Math.max(p.def.r * vs, 0.001), 2.4, 7.5);
+  cam.tx = p.x;
+  cam.ty = p.y;
+
+  $('#dossierClose').focus({ preventScroll:true });
+}
+
+function closeDossier(){
+  if(!state.dossierOpen) return;
+  state.openPlanet = null;
+  state.dossierOpen = false;
+
+  dossier.classList.remove('open');
+  dossier.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('dossier-open');
+
+  cam.tzoom = 1;
+  cam.tx = 0;
+  cam.ty = 0;
+
+  canvas.focus({ preventScroll:true });
+}
+
+function commitField(selector, apply){
+  const el = $(selector);
+  if(!el) return;
+  el.addEventListener('input', () => {
+    if(state.readonly) return;
+    const p = currentPlanetRuntime();
+    if(!p) return;
+    apply(p.data, el.value);
+    autosave();
+  });
+}
+
+function wireDossierInputs(){
+  commitField('#f-name', (d, v) => {
+    d.name = v;
+    $('#dossierName').textContent = v || '—';
+  });
+  commitField('#f-tagline', (d, v) => {
+    d.tagline = v;
+    $('#dossierTagline').textContent = v || '—';
+  });
+  commitField('#f-texture', (d, v) => { d.texture = v.trim(); });
+  commitField('#f-desc', (d, v) => { d.description = v; });
+
+  FACT_KEYS.forEach(k => commitField('#f-' + k, (d, v) => { d.facts[k] = v; }));
+
+  const imgInput = $('#f-image');
+  const vidInput = $('#f-video');
+
+  const imgDebounced = debounce(() => {
+    const url = imgInput.value.trim();
+    const p = currentPlanetRuntime();
+    if(p && !state.readonly){ p.data.image = url; autosave(); }
+    renderImagePreview(url);
+  }, 450);
+
+  const vidDebounced = debounce(() => {
+    const url = vidInput.value.trim();
+    const p = currentPlanetRuntime();
+    if(p && !state.readonly){ p.data.video = url; autosave(); }
+    renderVideoPreview(url);
+  }, 650);
+
+  imgInput.addEventListener('input', imgDebounced);
+  vidInput.addEventListener('input', vidDebounced);
+
+  $('#addMoon').addEventListener('click', addMoon);
+
+  $('#saveDossier').addEventListener('click', () => {
+    if(state.readonly) return;
+    saveSystem();
+    toast('Dossier saved to ' + state.user, 'ok');
+  });
+
+  $('#resetDossier').addEventListener('click', () => {
+    if(state.readonly) return;
+    const p = currentPlanetRuntime();
+    if(!p) return;
+    const def = p.def;
+    const fresh = {
+      name: def.name,
+      tagline: def.tagline,
+      texture: '',
+      description: def.description,
+      image: '',
+      video: '',
+      moons: def.moons.map(m => Object.assign({}, m)),
+      facts: Object.assign({}, def.facts)
+    };
+    state.system.planets[def.id] = fresh;
+    p.data = fresh;
+    fillDossier(p);
+    saveSystem();
+    toast(def.name + ' restored to defaults', 'warn');
+  });
+
+  $('#dossierClose').addEventListener('click', closeDossier);
+}
+
+/* ══════════════════════════════════════════════════════════
+   MENU
+   ══════════════════════════════════════════════════════════ */
+function openMenu(){
+  state.menuOpen = true;
+  menuBtn.classList.add('open');
+  menuBtn.setAttribute('aria-expanded', 'true');
+  menuBtn.setAttribute('aria-label', 'Close menu');
+  menuPanel.classList.add('open');
+  menuPanel.setAttribute('aria-hidden', 'false');
+}
+function closeMenu(){
+  state.menuOpen = false;
+  menuBtn.classList.remove('open');
+  menuBtn.setAttribute('aria-expanded', 'false');
+  menuBtn.setAttribute('aria-label', 'Open menu');
+  menuPanel.classList.remove('open');
+  menuPanel.setAttribute('aria-hidden', 'true');
+}
+function toggleMenu(){ state.menuOpen ? closeMenu() : openMenu(); }
+
+function updateUserCard(){
+  const a = avatarFor(state.user || 'Guest');
+  const av = $('#menuAvatar');
+  av.style.background = a.color + '22';
+  av.style.color = a.color;
+  av.style.borderColor = a.color + '66';
+  av.textContent = a.initials;
+
+  $('#menuUserName').textContent = state.user || '—';
+  const users = getUsers();
+  const rec = users[state.user];
+  const sessions = rec ? (rec.sessions || 1) : 1;
+  $('#menuUserSub').textContent = sessions + ' session' + (sessions === 1 ? '' : 's') + ' · ' + relTime(rec && rec.lastSeen);
+}
+
+/* ══════════════════════════════════════════════════════════
+   THEME
+   ══════════════════════════════════════════════════════════ */
+function applyTheme(t, persist){
+  state.theme = (t === 'light') ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', state.theme);
+  TH = THEMES[state.theme];
+
+  const sw = $('#themeSwitch');
+  const isLight = state.theme === 'light';
+  sw.classList.toggle('on', isLight);
+  $('#themeLabel').textContent = isLight ? 'Light theme' : 'Dark theme';
+  $('#themeToggle').setAttribute('aria-checked', isLight ? 'true' : 'false');
+
+  if(persist !== false){
+    try{ localStorage.setItem(LS.theme, state.theme); }catch(e){}
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   ONLINE NOW PANEL
+   ══════════════════════════════════════════════════════════ */
+function renderOnline(){
+  const users = getUsers();
+  const now = Date.now();
+
+  const self = {
+    name: state.user || 'Guest',
+    online: true,
+    you: true,
+    sub: 'This device'
+  };
+
+  const real = [];
+  Object.keys(users).forEach(k => {
+    const u = users[k];
+    if(!u || u.name === state.user) return;
+    if(now - (u.lastSeen || 0) > SEVEN_DAYS) return;
+    real.push({
+      name: u.name,
+      online: (now - (u.lastSeen || 0)) < 5 * 60 * 1000,
+      sub: 'Last seen ' + relTime(u.lastSeen)
+    });
+  });
+  real.sort((a, b) => (b.online ? 1 : 0) - (a.online ? 1 : 0));
+
+  const sims = SIM_USERS.map(s => ({
+    name: s.name,
+    online: s.status === 'online',
+    sub: s.status === 'online' ? 'Exploring Vaelora' : 'Away from console'
+  }));
+
+  const all = [self].concat(real, sims);
+  const onlineCount = all.filter(u => u.online).length;
+  $('#onlineCount').textContent = onlineCount;
+
+  let html = '';
+
+  html += '<div class="online-section-label">Your session</div>';
+  html += '<div class="user-row self">' + avatarHTML(self.name, 30) +
+          '<div class="user-meta"><div class="user-name">' + esc(self.name) +
+          '<span class="tag-you">You</span></div><div class="user-sub">' + esc(self.sub) + '</div></div>' +
+          '<span class="status-dot online" title="Online"></span></div>';
+
+  if(real.length){
+    html += '<div class="online-section-label">Recent travellers</div>';
+    real.forEach(u => { html += userRowHTML(u); });
+  }
+
+  html += '<div class="online-section-label">Network</div>';
+  sims.forEach(u => { html += userRowHTML(u); });
+
+  onlineBody.innerHTML = html;
+
+  $$('.user-row[data-name]', onlineBody).forEach(row => {
+    row.addEventListener('click', () => {
+      const name = row.getAttribute('data-name');
+      if(name === state.user){ toast("That's you — this is your system"); return; }
+      openVisitModal(name);
+    });
+  });
+}
+
+function userRowHTML(u){
+  return '<button class="user-row" data-name="' + esc(u.name) + '" type="button">' +
+    avatarHTML(u.name, 30) +
+    '<div class="user-meta">' +
+      '<div class="user-name">' + esc(u.name) + '</div>' +
+      '<div class="user-sub">' + esc(u.sub || '') + '</div>' +
+    '</div>' +
+    '<span class="status-dot ' + (u.online ? 'online' : 'away') + '" title="' + (u.online ? 'Online' : 'Away') + '"></span>' +
+  '</button>';
+}
+
+/* ══════════════════════════════════════════════════════════
+   USER SESSION
+   ══════════════════════════════════════════════════════════ */
+function enterUser(rawName){
+  // ── SAVE the current user's system BEFORE switching ──
+  if(state.user && !state.readonly){
+    saveSystem();
+  }
+
+  let name = String(rawName || '').trim().replace(/\s+/g, ' ').slice(0, 24);
+  if(!name) name = 'Guest';
+
+  const users = getUsers();
+  const now = Date.now();
+  if(!users[name]){
+    users[name] = { name: name, created: now, sessions: 0, lastSeen: now };
+  }
+  users[name].sessions = (users[name].sessions || 0) + 1;
+  users[name].lastSeen = now;
+  setUsers(users);
+
+  try{ localStorage.setItem(LS.current, name); }catch(e){}
+
+  state.user = name;
+  state.viewUser = null;
+  state.readonly = false;
+  state.system = loadSystem(name);
+  state.sun = loadSun(name);
+
+  buildRuntime();
+  renderOnline();
+  updateUserCard();
+  setReadonlyUI(false);
+  exitVisitUI();
+  syncSunInput();
+
+  closeDossier();
+  cam.tzoom = 1; cam.tx = 0; cam.ty = 0;
+}
+
+function syncSunInput(){
+  const el = $('#sunInput');
+  if(el) el.value = state.sun.texture || '';
+}
+
+/* ══════════════════════════════════════════════════════════
+   VISIT MODE
+   ══════════════════════════════════════════════════════════ */
+let visitTarget = null;
+
+function openVisitModal(name){
+  visitTarget = name;
+  const a = avatarFor(name);
+  const av = $('#visitAvatar');
+  av.style.background = a.color + '22';
+  av.style.color = a.color;
+  av.style.borderColor = a.color + '66';
+  av.textContent = a.initials;
+
+  const sim = SIM_USERS.find(s => s.name === name);
+  $('#visitName').textContent = name;
+  $('#visitSub').textContent = sim
+    ? (sim.status === 'online' ? 'Online now · public system' : 'Away · public system')
+    : 'Traveller · public system';
+
+  $('#visitStep1').classList.remove('hidden');
+  $('#visitStep2').classList.add('hidden');
+  $('#visitStep3').classList.add('hidden');
+
+  $('#visitModal').classList.add('show');
+  setTimeout(() => $('#sendRequest').focus(), 60);
+}
+
+function closeVisitModal(){
+  $('#visitModal').classList.remove('show');
+}
+
+function enterVisitMode(name){
+  state.viewUser = name;
+  state.readonly = true;
+  state.system = loadSystem(name);
+  state.sun = loadSun(name);
+
+  buildRuntime();
+  closeDossier();
+  cam.tzoom = 1; cam.tx = 0; cam.ty = 0;
+
+  setReadonlyUI(true);
+  syncSunInput();
+
+  $('#visitBannerText').textContent = 'Viewing ' + name + "'s system";
+  $('#visitBanner').classList.add('show');
+  document.body.classList.add('visit-mode');
+
+  toast('Read-only access to ' + name + "'s system", 'ok');
+}
+
+function exitVisitUI(){
+  $('#visitBanner').classList.remove('show');
+  document.body.classList.remove('visit-mode');
+  $('#visitBannerText').textContent = 'Viewing —';
+}
+
+function returnToMine(){
+  if(!state.viewUser) return;
+  const back = state.viewUser;
+  state.viewUser = null;
+  state.readonly = false;
+  state.system = loadSystem(state.user);
+  state.sun = loadSun(state.user);
+  buildRuntime();
+  closeDossier();
+  setReadonlyUI(false);
+  syncSunInput();
+  exitVisitUI();
+  toast('Returned to your system (left ' + back + "'s)", 'ok');
+}
+
+/* ══════════════════════════════════════════════════════════
+   ACCESS LOG (EASTER EGG)
+   ══════════════════════════════════════════════════════════ */
+function openLogModal(){
+  const users = getUsers();
+  const list = Object.keys(users).map(k => users[k]).filter(Boolean);
+  list.sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0));
+
+  if(!list.length){
+    $('#logList').innerHTML = '<p class="muted small" style="text-align:center;padding:18px 0">No travellers recorded yet.</p>';
+  }else{
+    $('#logList').innerHTML = list.map(u => {
+      const isYou = u.name === state.user;
+      return '<div class="log-row">' +
+        avatarHTML(u.name, 38) +
+        '<div class="user-meta">' +
+          '<div class="user-name">' + esc(u.name) + (isYou ? '<span class="tag-you">You</span>' : '') + '</div>' +
+          '<div class="user-sub">Last access · ' + esc(fmtDate(u.lastSeen)) + '</div>' +
+        '</div>' +
+        '<div class="log-stats"><b>' + (u.sessions || 1) + '</b><br>session' + ((u.sessions || 1) === 1 ? '' : 's') + '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  $('#logModal').classList.add('show');
+}
+
+function clearLog(){
+  const users = getUsers();
+  const keep = users[state.user];
+  const fresh = {};
+  if(keep){
+    fresh[state.user] = Object.assign({}, keep, { sessions: 1, lastSeen: Date.now() });
+  }
+  setUsers(fresh);
+  renderOnline();
+  updateUserCard();
+  openLogModal();
+  toast('Access log cleared', 'warn');
+}
+
+/* ══════════════════════════════════════════════════════════
+   EASTER EGG — SUN CLICKS
+   ══════════════════════════════════════════════════════════ */
+function registerSunClick(){
+  const now = Date.now();
+  sunClicks.push(now);
+  while(sunClicks.length && now - sunClicks[0] > 1600) sunClicks.shift();
+  if(sunClicks.length >= 5){
+    sunClicks.length = 0;
+    openLogModal();
+    toast('Hidden access log unlocked', 'warn');
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   CANVAS EVENTS
+   ══════════════════════════════════════════════════════════ */
+function wireCanvas(){
+  canvas.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = e.clientX - rect.left;
+    mouse.y = e.clientY - rect.top;
+    mouse.on = true;
+  });
+  canvas.addEventListener('mouseleave', () => {
+    mouse.on = false;
+    hoverPlanet = null;
+    hoverSun = false;
+    canvas.style.cursor = 'default';
+  });
+  canvas.addEventListener('touchstart', e => {
+    if(e.touches.length !== 1) return;
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = e.touches[0].clientX - rect.left;
+    mouse.y = e.touches[0].clientY - rect.top;
+    mouse.on = true;
+  }, { passive:true });
+
+  canvas.addEventListener('click', e => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const wp = screenToWorld(mx, my);
+
+    const hit = pickPlanet(wp);
+    if(hit){ openDossier(hit.def.id); return; }
+
+    if(Math.hypot(wp.x, wp.y) <= SUN_R * 1.25){ registerSunClick(); return; }
+
+    if(state.dossierOpen) closeDossier();
+    if(state.menuOpen) closeMenu();
+  });
+
+  canvas.addEventListener('contextmenu', e => e.preventDefault());
+}
+
+/* ══════════════════════════════════════════════════════════
+   WIRING — UI
+   ══════════════════════════════════════════════════════════ */
+function wireUI(){
+  menuBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    toggleMenu();
+  });
+  menuPanel.addEventListener('click', e => e.stopPropagation());
+  document.addEventListener('click', e => {
+    if(!state.menuOpen) return;
+    if(menuPanel.contains(e.target) || menuBtn.contains(e.target)) return;
+    closeMenu();
+  });
+
+  $('#onlineToggle').addEventListener('click', () => {
+    const panel = $('#onlinePanel');
+    panel.classList.toggle('collapsed');
+    const collapsed = panel.classList.contains('collapsed');
+    $('#onlineToggle').setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+  });
+
+  $('#pauseBtn').addEventListener('click', () => {
+    state.paused = !state.paused;
+    $('#pauseBtn').textContent = state.paused ? '▶ Resume orbits' : '⏸ Pause orbits';
+    toast(state.paused ? 'Orbits paused' : 'Orbits resumed');
+  });
+
+  const range = $('#speedRange');
+  range.addEventListener('input', () => {
+    state.speed = parseFloat(range.value);
+    $('#speedVal').textContent = state.speed.toFixed(1) + '×';
+  });
+
+  const themeToggle = $('#themeToggle');
+  const doToggle = () => applyTheme(state.theme === 'dark' ? 'light' : 'dark', true);
+  themeToggle.addEventListener('click', doToggle);
+  themeToggle.addEventListener('keydown', e => {
+    if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); doToggle(); }
+  });
+
+  const sunInput = $('#sunInput');
+  const sunDebounced = debounce(() => {
+    if(state.readonly) return;
+    state.sun.texture = sunInput.value.trim();
+    autosave();
+  }, 500);
+  sunInput.addEventListener('input', sunDebounced);
+
+  $('#switchUser').addEventListener('click', () => {
+    closeMenu();
+    // Save before opening the login screen too
+    if(state.user && !state.readonly) saveSystem();
+    showLogin();
+  });
+
+  $('#returnToMine').addEventListener('click', returnToMine);
+
+  $('#sendRequest').addEventListener('click', () => {
+    $('#visitStep1').classList.add('hidden');
+    $('#visitStep2').classList.remove('hidden');
+    setTimeout(() => {
+      $('#visitStep2').classList.add('hidden');
+      $('#visitStep3').classList.remove('hidden');
+      setTimeout(() => {
+        closeVisitModal();
+        if(visitTarget) enterVisitMode(visitTarget);
+        visitTarget = null;
+      }, 900);
+    }, 1500);
+  });
+  $('#cancelVisit').addEventListener('click', () => {
+    closeVisitModal();
+    visitTarget = null;
+  });
+
+  $('#logClose').addEventListener('click', () => $('#logModal').classList.remove('show'));
+  $('#logClear').addEventListener('click', clearLog);
+  $('#logChangeUser').addEventListener('click', () => {
+    $('#logModal').classList.remove('show');
+    if(state.user && !state.readonly) saveSystem();
+    showLogin();
+  });
+
+  $('#loginBtn').addEventListener('click', submitLogin);
+  $('#skipBtn').addEventListener('click', () => {
+    hideLogin();
+    enterUser('Guest');
+    toast('Entered as Guest');
+  });
+  $('#loginName').addEventListener('keydown', e => {
+    if(e.key === 'Enter') submitLogin();
+  });
+
+  document.addEventListener('keydown', e => {
+    if(e.key !== 'Escape') return;
+    if($('#logModal').classList.contains('show')){ $('#logModal').classList.remove('show'); return; }
+    if($('#visitModal').classList.contains('show')){ closeVisitModal(); visitTarget = null; return; }
+    if($('#loginModal').classList.contains('show')) return;
+    if(state.menuOpen){ closeMenu(); return; }
+    if(state.dossierOpen){ closeDossier(); return; }
+  });
+
+  $('#logModal').addEventListener('click', e => {
+    if(e.target === $('#logModal')) $('#logModal').classList.remove('show');
+  });
+  $('#visitModal').addEventListener('click', e => {
+    if(e.target === $('#visitModal') && !$('#visitStep2').classList.contains('hidden')) return;
+    if(e.target === $('#visitModal')){ closeVisitModal(); visitTarget = null; }
+  });
+
+  window.addEventListener('resize', () => {
+    resizeCanvas();
+    makeStars();
+  });
+  window.addEventListener('orientationchange', () => {
+    setTimeout(() => { resizeCanvas(); makeStars(); }, 180);
+  });
+
+  /* ── Save everything before the page unloads ── */
+  window.addEventListener('beforeunload', () => {
+    if(state.user && !state.readonly) saveSystem();
+  });
+  /* Also save when the tab is hidden (mobile safe) */
+  document.addEventListener('visibilitychange', () => {
+    if(document.visibilityState === 'hidden' && state.user && !state.readonly){
+      saveSystem();
+    }
+  });
+}
+
+/* ══════════════════════════════════════════════════════════
+   LOGIN
+   ══════════════════════════════════════════════════════════ */
+function showLogin(){
+  closeDossier();
+  cam.tzoom = 1; cam.tx = 0; cam.ty = 0;
+  $('#loginName').value = '';
+  $('#loginModal').classList.add('show');
+  setTimeout(() => $('#loginName').focus(), 90);
+}
+function hideLogin(){
+  $('#loginModal').classList.remove('show');
+}
+function submitLogin(){
+  const val = $('#loginName').value.trim();
+  if(!val){
+    toast('Please enter a name, or press Skip', 'warn');
+    $('#loginName').focus();
+    return;
+  }
+  hideLogin();
+  enterUser(val);
+  toast('Welcome, ' + state.user + ' · system loaded', 'ok');
+}
+
+/* ══════════════════════════════════════════════════════════
+   BOOT
+   ══════════════════════════════════════════════════════════ */
+function boot(){
+  let savedTheme = 'dark';
+  try{ savedTheme = localStorage.getItem(LS.theme) || 'dark'; }catch(e){}
+  applyTheme(savedTheme, false);
+
+  resizeCanvas();
+  makeStars();
+
+  wireUI();
+  wireCanvas();
+  wireDossierInputs();
+
+  let current = null;
+  try{ current = localStorage.getItem(LS.current); }catch(e){}
+
+  if(current){
+    const users = getUsers();
+    if(users[current]){
+      enterUser(current);
+      toast('Welcome back, ' + current, 'ok');
+    }else{
+      showLogin();
+      state.system = defaultSystem();
+      buildRuntime();
+    }
+  }else{
+    state.system = defaultSystem();
+    buildRuntime();
+    renderOnline();
+    showLogin();
+  }
+
+  requestAnimationFrame(frame);
+}
+
+boot();
+
+})();
+</script>
+</body>
+</html>
